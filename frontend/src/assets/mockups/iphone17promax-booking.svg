@@ -1,0 +1,67 @@
+<svg width="720" height="1500" viewBox="0 0 720 1500" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="heroGrad" x1="60" y1="80" x2="660" y2="1460" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#0B1220"/>
+        <stop offset="1" stop-color="#172554"/>
+      </linearGradient>
+      <linearGradient id="softGlow" x1="140" y1="120" x2="540" y2="420" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FF5A1F" stop-opacity="0.28"/>
+        <stop offset="1" stop-color="#7C3AED" stop-opacity="0.0"/>
+      </linearGradient>
+      <linearGradient id="g1" x1="100" y1="300" x2="294" y2="442" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FF8A5B"/>
+        <stop offset="1" stop-color="#FB5E35"/>
+      </linearGradient>
+      <linearGradient id="g2" x1="314" y1="300" x2="508" y2="442" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#312E81"/>
+        <stop offset="1" stop-color="#60A5FA"/>
+      </linearGradient>
+      <linearGradient id="g3" x1="100" y1="462" x2="294" y2="604" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#0F766E"/>
+        <stop offset="1" stop-color="#14B8A6"/>
+      </linearGradient>
+      <linearGradient id="g4" x1="314" y1="462" x2="508" y2="604" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#7C2D12"/>
+        <stop offset="1" stop-color="#F59E0B"/>
+      </linearGradient>
+    </defs>
+
+    <rect width="720" height="1500" fill="#EEF2F7"/>
+    <rect x="112" y="28" width="496" height="1444" rx="78" fill="#0A0A0A"/>
+    <rect x="134" y="50" width="452" height="1400" rx="62" fill="#111827"/>
+    <rect x="150" y="74" width="420" height="1352" rx="52" fill="#FFFFFF"/>
+    <rect x="286" y="92" width="148" height="34" rx="17" fill="#0A0A0A"/>
+    <circle cx="360" cy="109" r="6" fill="#222"/>
+    <circle cx="402" cy="109" r="5" fill="#1F2937"/>
+    <rect x="150" y="74" width="420" height="228" rx="52" fill="url(#heroGrad)"/>
+    <circle cx="474" cy="134" r="144" fill="url(#softGlow)"/>
+    <text x="182" y="156" font-size="15" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#FFD5C6">CAPTURR</text>
+    <text x="182" y="208" font-size="40" font-family="Inter, Arial, sans-serif" font-weight="900" fill="#FFFFFF">Choose your shoot</text>
+    <text x="182" y="242" font-size="18" font-family="Inter, Arial, sans-serif" fill="#CBD5E1">Personal events, creator content, and brand campaigns.</text>
+
+    
+                <rect x="100" y="250" width="194" height="142" rx="24" fill="url(#g1)"/>
+                <rect x="116" y="266" width="90" height="26" rx="13" fill="rgba(255,255,255,0.82)"/>
+                <text x="130" y="284" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#0F172A">Popular</text>
+                <text x="118" y="368" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#FFFFFF">Birthdays</text>
+                
+                <rect x="314" y="250" width="194" height="142" rx="24" fill="url(#g2)"/>
+                <rect x="330" y="266" width="90" height="26" rx="13" fill="rgba(255,255,255,0.82)"/>
+                <text x="344" y="284" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#0F172A">Premium</text>
+                <text x="332" y="368" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#FFFFFF">Proposals</text>
+                
+                <rect x="100" y="410" width="194" height="142" rx="24" fill="url(#g3)"/>
+                <rect x="116" y="426" width="90" height="26" rx="13" fill="rgba(255,255,255,0.82)"/>
+                <text x="130" y="444" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#0F172A">Social</text>
+                <text x="118" y="528" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#FFFFFF">Creator Reels</text>
+                
+                <rect x="314" y="410" width="194" height="142" rx="24" fill="url(#g4)"/>
+                <rect x="330" y="426" width="90" height="26" rx="13" fill="rgba(255,255,255,0.82)"/>
+                <text x="344" y="444" font-size="14" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#0F172A">Business</text>
+                <text x="332" y="528" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#FFFFFF">Brand Shoots</text>
+                
+
+    <rect x="186" y="1344" width="348" height="62" rx="31" fill="#0F172A"/>
+    <text x="240" y="1381" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#FFFFFF">Continue booking</text>
+    <circle cx="212" cy="1375" r="10" fill="#FF5A1F"/>
+    </svg>
