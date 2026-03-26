@@ -1,31 +1,40 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from datetime import datetime
 import os
+from datetime import datetime
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 app = Flask(__name__)
 
-# ✅ CORS (allow frontend)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-# ✅ DATABASE CONFIG
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+# -----------------------------
+# CORS
+# -----------------------------
+frontend_origins = os.getenv("CORS_ORIGINS", "*")
+if frontend_origins == "*":
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 else:
-    # fallback for local
+    allowed_origins = [origin.strip() for origin in frontend_origins.split(",") if origin.strip()]
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
+
+# -----------------------------
+# DATABASE CONFIG
+# -----------------------------
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///capturr.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db = SQLAlchemy(app)
 
-# =========================
+# -----------------------------
 # MODELS
-# =========================
-
+# -----------------------------
 class BookingInquiry(db.Model):
     __tablename__ = "booking_inquiries"
 
@@ -38,7 +47,7 @@ class BookingInquiry(db.Model):
     event_date = db.Column(db.String(50), nullable=False)
     service_type = db.Column(db.String(50), nullable=False)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
 class CreatorApplication(db.Model):
@@ -55,128 +64,184 @@ class CreatorApplication(db.Model):
     categories = db.Column(db.String(255), nullable=False)
     portfolio_url = db.Column(db.String(255))
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
-# =========================
+# -----------------------------
+# DATABASE HELPERS
+# -----------------------------
+_tables_initialized = False
+
+
+def initialize_tables():
+    global _tables_initialized
+
+    if _tables_initialized:
+        return
+
+    with app.app_context():
+        db.create_all()
+
+    _tables_initialized = True
+
+
+def validate_required_fields(payload, required_fields):
+    missing_fields = [field for field in required_fields if not str(payload.get(field, "")).strip()]
+    return missing_fields
+
+
+# -----------------------------
 # ROUTES
-# =========================
-
-@app.route("/")
+# -----------------------------
+@app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Capturr API running"})
+    return jsonify(
+        {
+            "message": "Capturr API running",
+            "service": "capturr-backend",
+            "status": "ok",
+        }
+    ), 200
 
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify(
+        {
+            "status": "ok",
+            "database_configured": bool(database_url),
+        }
+    ), 200
 
 
-# =========================
-# BOOKING API
-# =========================
+@app.route("/api/db-health", methods=["GET"])
+def db_health():
+    try:
+        with db.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return jsonify({"status": "ok", "database": "connected"}), 200
+    except Exception as exc:
+        return jsonify({"status": "error", "database": "not connected", "error": str(exc)}), 500
+
 
 @app.route("/api/bookings", methods=["POST"])
 def create_booking():
-    data = request.get_json()
-
-    required_fields = [
-        "full_name",
-        "email",
-        "phone",
-        "city",
-        "event_type",
-        "event_date",
-        "service_type"
-    ]
-
-    missing = [field for field in required_fields if not data.get(field)]
-
-    if missing:
-        return jsonify({
-            "error": f"Missing fields: {', '.join(missing)}"
-        }), 400
-
     try:
+        initialize_tables()
+
+        payload = request.get_json(silent=True) or {}
+
+        required_fields = [
+            "full_name",
+            "email",
+            "phone",
+            "city",
+            "event_type",
+            "event_date",
+            "service_type",
+        ]
+
+        missing_fields = validate_required_fields(payload, required_fields)
+        if missing_fields:
+            return jsonify(
+                {
+                    "error": "Missing required fields",
+                    "missing_fields": missing_fields,
+                }
+            ), 400
+
         booking = BookingInquiry(
-            full_name=data["full_name"],
-            email=data["email"],
-            phone=data["phone"],
-            city=data["city"],
-            event_type=data["event_type"],
-            event_date=data["event_date"],
-            service_type=data["service_type"],
-            notes=data.get("notes", "")
+            full_name=payload["full_name"].strip(),
+            email=payload["email"].strip(),
+            phone=payload["phone"].strip(),
+            city=payload["city"].strip(),
+            event_type=payload["event_type"].strip(),
+            event_date=payload["event_date"].strip(),
+            service_type=payload["service_type"].strip(),
+            notes=payload.get("notes", "").strip(),
         )
 
         db.session.add(booking)
         db.session.commit()
 
-        return jsonify({
-            "message": "Booking stored successfully"
-        }), 201
+        return jsonify(
+            {
+                "message": "Booking inquiry stored successfully",
+                "id": booking.id,
+            }
+        ), 201
 
-    except Exception as e:
+    except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Database error", "details": str(exc)}), 500
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"error": "Unexpected error", "details": str(exc)}), 500
 
-
-# =========================
-# CREATOR API
-# =========================
 
 @app.route("/api/creators", methods=["POST"])
 def create_creator():
-    data = request.get_json()
-
-    required_fields = [
-        "full_name",
-        "email",
-        "phone",
-        "city",
-        "experience_years",
-        "categories"
-    ]
-
-    missing = [field for field in required_fields if not data.get(field)]
-
-    if missing:
-        return jsonify({
-            "error": f"Missing fields: {', '.join(missing)}"
-        }), 400
-
     try:
+        initialize_tables()
+
+        payload = request.get_json(silent=True) or {}
+
+        required_fields = [
+            "full_name",
+            "email",
+            "phone",
+            "city",
+            "experience_years",
+            "categories",
+        ]
+
+        missing_fields = validate_required_fields(payload, required_fields)
+        if missing_fields:
+            return jsonify(
+                {
+                    "error": "Missing required fields",
+                    "missing_fields": missing_fields,
+                }
+            ), 400
+
         creator = CreatorApplication(
-            full_name=data["full_name"],
-            email=data["email"],
-            phone=data["phone"],
-            city=data["city"],
-            instagram_handle=data.get("instagram_handle", ""),
-            experience_years=data["experience_years"],
-            gear=data.get("gear", ""),
-            categories=data["categories"],
-            portfolio_url=data.get("portfolio_url", ""),
-            notes=data.get("notes", "")
+            full_name=payload["full_name"].strip(),
+            email=payload["email"].strip(),
+            phone=payload["phone"].strip(),
+            city=payload["city"].strip(),
+            instagram_handle=payload.get("instagram_handle", "").strip(),
+            experience_years=str(payload["experience_years"]).strip(),
+            gear=payload.get("gear", "").strip(),
+            categories=payload["categories"].strip(),
+            portfolio_url=payload.get("portfolio_url", "").strip(),
+            notes=payload.get("notes", "").strip(),
         )
 
         db.session.add(creator)
         db.session.commit()
 
-        return jsonify({
-            "message": "Creator application stored successfully"
-        }), 201
+        return jsonify(
+            {
+                "message": "Creator application stored successfully",
+                "id": creator.id,
+            }
+        ), 201
 
-    except Exception as e:
+    except SQLAlchemyError as exc:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Database error", "details": str(exc)}), 500
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"error": "Unexpected error", "details": str(exc)}), 500
 
 
-# =========================
-# RUN APP
-# =========================
-
+# -----------------------------
+# STARTUP
+# -----------------------------
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()   # create tables automatically
+    try:
+        initialize_tables()
+    except Exception as exc:
+        print(f"Warning: database initialization skipped at startup: {exc}")
 
     app.run(host="0.0.0.0", port=5000, debug=True)
