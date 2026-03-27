@@ -158,7 +158,7 @@ function MarqueeRow({ items, reverse = false, duration = 30 }) {
   );
 }
 
-function LeadModal({ type, isOpen, onClose }) {
+function LeadModal({ type, isOpen, onClose, apiBaseUrl }) {
   const isCustomer = type === "customer";
   const [form, setForm] = useState(isCustomer ? customerInitial : creatorInitial);
   const [loading, setLoading] = useState(false);
@@ -186,9 +186,13 @@ function LeadModal({ type, isOpen, onClose }) {
     setError("");
 
     try {
+      if (!apiBaseUrl) {
+        throw new Error("API base URL is missing. Check VITE_API_BASE_URL.");
+      }
+
       const endpoint = isCustomer
-        ? "http://127.0.0.1:5000/api/bookings"
-        : "http://127.0.0.1:5000/api/creators";
+        ? `${apiBaseUrl}/api/bookings`
+        : `${apiBaseUrl}/api/creators`;
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -199,7 +203,7 @@ function LeadModal({ type, isOpen, onClose }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Submission failed");
+        throw new Error(data.error || data.details || "Submission failed");
       }
 
       setSuccess(
@@ -777,6 +781,7 @@ function CTASection({ onOpenCustomer, onOpenCreator }) {
 }
 
 export default function App() {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [activeModal, setActiveModal] = useState(null);
 
   return (
@@ -798,11 +803,13 @@ export default function App() {
         type="customer"
         isOpen={activeModal === "customer"}
         onClose={() => setActiveModal(null)}
+        apiBaseUrl={API_BASE_URL}
       />
       <LeadModal
         type="creator"
         isOpen={activeModal === "creator"}
         onClose={() => setActiveModal(null)}
+        apiBaseUrl={API_BASE_URL}
       />
     </div>
   );
